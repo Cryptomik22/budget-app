@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Бюджет по зарплатным периодам</title>
+  <style>
+    :root{
+      --bg:#f4f7fb; --card:#fff; --text:#1f2937; --muted:#6b7280; --line:#dbe3ee;
+      --accent:#2f6fed; --good:#157347; --warn:#b26a00; --bad:#b42318;
+      --soft:#eef4ff; --soft2:#f8fbff; --radius:18px; --shadow:0 8px 28px rgba(20,35,70,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    body{padding:12px}
+    .app{max-width:1280px;margin:0 auto;display:grid;gap:12px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+    .hero{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+    .title{display:flex;gap:10px;align-items:center}
+    .emoji{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--soft),#fff);font-size:24px}
+    h1,h2{margin:0} h1{font-size:1.35rem} h2{font-size:1rem;margin-bottom:10px}
+    .sub,.note{color:var(--muted);font-size:.92rem;line-height:1.45}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .stats{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+    .grid{display:grid;grid-template-columns:1fr 140px;gap:10px;align-items:center}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 130px;gap:10px;align-items:center}
+    .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 130px;gap:10px;align-items:center}
+    input,select,button{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;font-size:16px;background:#fff;color:var(--text)}
+    button{cursor:pointer}
+    .primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .secondary{background:#fff}
+    .danger{background:#fff0f0;color:var(--bad);border-color:#f0c5c5}
+    .ok{background:#eefaf1;color:var(--good);border-color:#c9e9d2}
+    .btn-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .stat{background:linear-gradient(180deg,var(--soft2),#fff);border:1px solid var(--line);border-radius:16px;padding:12px}
+    .k{font-size:.85rem;color:var(--muted)}
+    .v{font-size:1.02rem;font-weight:700;margin-top:4px}
+    .good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:.9rem}
+    .list{display:grid;gap:8px}
+    .line{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:.95rem}
+    .line:last-child{border-bottom:none}
+    .tag{display:inline-block;padding:6px 9px;border-radius:999px;background:var(--soft);font-size:.82rem;margin:2px 4px 2px 0}
+    .progress{width:100%;height:10px;background:#edf2f7;border-radius:999px;overflow:hidden;margin-top:8px}
+    .progress>span{display:block;height:100%;background:var(--accent);border-radius:999px}
+    .chart-wrap{width:100%;overflow:auto;border:1px solid var(--line);border-radius:14px;padding:10px;background:#fbfdff}
+    canvas{width:100%;max-width:100%}
+    .table-wrap{overflow:auto}
+    table{width:100%;border-collapse:collapse;min-width:860px}
+    th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:.94rem}
+    th{background:#fafcff;color:var(--muted);font-weight:600}
+    .empty{padding:14px;border:1px dashed var(--line);border-radius:14px;text-align:center;color:var(--muted)}
+    .footer{text-align:center;color:var(--muted);font-size:.86rem}
+    .closed-badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eefaf1;color:var(--good);font-size:.78rem;border:1px solid #c9e9d2}
+    .open-badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff8e8;color:var(--warn);font-size:.78rem;border:1px solid #f3ddb0}
+    .sync-ok{color:var(--good)}
+    .sync-warn{color:var(--warn)}
+    .sync-bad{color:var(--bad)}
+    @media (max-width:980px){
+      .two,.stats,.btn-row-2,.grid-3,.grid-4{grid-template-columns:1fr}
+      .grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="card hero">
+    <div class="title">
+      <div class="emoji">☁️</div>
+      <div>
+        <h1>Бюджет по зарплатным периодам</h1>
+        <div class="sub">Облачная версия с автозагрузкой и автосохранением через Google Sheets</div>
+      </div>
+    </div>
+    <div class="list" style="min-width:min(560px,100%);gap:6px">
+      <div class="pill">✅ Автосинхронизация</div>
+      <div class="pill">✅ Защита от перезаписи по revision</div>
+      <div class="pill">✅ Один бюджет на телефоне и ПК</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="pill" id="cloudStatus">Синхронизация: запуск...</div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h2>1. Период и план</h2>
+      <div class="grid">
+        <label for="periodSelect">Период</label>
+        <select id="periodSelect"></select>
+
+        <label for="periodStart">Начало периода</label>
+        <input id="periodStart" type="date">
+
+        <label for="incomePeriod">Доход этого периода</label>
+        <input id="incomePeriod" type="number" value="37500" inputmode="numeric">
+
+        <label for="salary5Amount">Зарплата 5-го</label>
+        <input id="salary5Amount" type="number" value="37500" inputmode="numeric">
+
+        <label for="salary20Amount">Зарплата 20-го</label>
+        <input id="salary20Amount" type="number" value="37500" inputmode="numeric">
+
+        <label for="budgetFood">Еда</label>
+        <input id="budgetFood" type="number" value="9000" inputmode="numeric">
+
+        <label for="budgetHome">Быт / химия / гигиена</label>
+        <input id="budgetHome" type="number" value="1250" inputmode="numeric">
+
+        <label for="budgetUtilities">Коммуналка</label>
+        <input id="budgetUtilities" type="number" value="4000" inputmode="numeric">
+
+        <label for="budgetFun">Развлечения</label>
+        <input id="budgetFun" type="number" value="2000" inputmode="numeric">
+
+        <label for="budgetFigures">Фигурки</label>
+        <input id="budgetFigures" type="number" value="1000" inputmode="numeric">
+
+        <label for="budgetClothes">Одежда / мелочи</label>
+        <input id="budgetClothes" type="number" value="1500" inputmode="numeric">
+
+        <label for="budgetVacation">Отпуск</label>
+        <input id="budgetVacation" type="number" value="1500" inputmode="numeric">
+
+        <label for="budgetSafety">Подушка</label>
+        <input id="budgetSafety" type="number" value="1500" inputmode="numeric">
+
+        <label for="budgetCredit">Кредит</label>
+        <input id="budgetCredit" type="number" value="8544" inputmode="numeric">
+      </div>
+
+      <div class="btn-row-2" style="margin-top:12px">
+        <button class="primary" id="savePlanBtn" type="button">Сохранить план периода</button>
+        <button class="secondary" id="newPeriodBtn" type="button">Создать новый период</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. Добавить операцию</h2>
+      <div class="grid-4">
+        <input id="entryDate" type="date">
+        <select id="entryType">
+          <option value="expense">Трата</option>
+          <option value="income">Доход</option>
+          <option value="sidejob">Подработка</option>
+        </select>
+        <select id="entryCategory">
+          <option value="food">Еда</option>
+          <option value="home">Быт / химия / гигиена</option>
+          <option value="utilities">Коммуналка</option>
+          <option value="fun">Развлечения</option>
+          <option value="figures">Фигурки</option>
+          <option value="clothes">Одежда / мелочи</option>
+          <option value="vacation">Отпуск</option>
+          <option value="safety">Подушка</option>
+          <option value="credit">Кредит</option>
+          <option value="other">Другое</option>
+        </select>
+        <input id="entryAmount" type="number" inputmode="numeric" placeholder="Сумма">
+      </div>
+      <div class="grid-3" style="margin-top:10px">
+        <input id="entryNote" type="text" placeholder="Комментарий">
+        <button class="primary" id="addEntryBtn" type="button">Сохранить операцию</button>
+        <button class="danger" id="clearPeriodBtn" type="button">Очистить период</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3. Итог периода</h2>
+    <div class="stats">
+      <div class="stat"><div class="k">Доход всего</div><div class="v" id="statIncome">—</div></div>
+      <div class="stat"><div class="k">Потрачено всего</div><div class="v" id="statSpent">—</div></div>
+      <div class="stat"><div class="k">Остаток по факту</div><div class="v" id="statLeft">—</div></div>
+      <div class="stat"><div class="k">Осталось по категориям</div><div class="v" id="statBudgetLeft">—</div></div>
+      <div class="stat"><div class="k">Свободный остаток</div><div class="v" id="statFreeLeft">—</div></div>
+      <div class="stat"><div class="k">Накоплено всего</div><div class="v" id="statSavedTotal">—</div></div>
+      <div class="stat"><div class="k">До следующей зп</div><div class="v" id="statDaysToSalary">—</div></div>
+    </div>
+    <div style="margin-top:12px" id="periodStatus" class="pill">Здесь будет статус периода</div>
+  </div>
+
+  <div class="two">
+    <div class="card"><h2>4. Доходы — коротко</h2><div class="list" id="incomeBreakdown"></div></div>
+    <div class="card"><h2>5. Подработка — коротко</h2><div class="list" id="sidejobStats"></div></div>
+  </div>
+
+  <div class="two">
+    <div class="card"><h2>6. Обязательные платежи</h2><div class="list" id="mandatoryStats"></div></div>
+    <div class="card"><h2>7. Остатки по категориям</h2><div class="list" id="categoryStats"></div></div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h2>8. Быстрое распределение свободного остатка</h2>
+      <div class="grid-4">
+        <select id="allocateCategory">
+          <option value="food">Еда</option>
+          <option value="home">Быт / химия / гигиена</option>
+          <option value="utilities">Коммуналка</option>
+          <option value="fun">Развлечения</option>
+          <option value="figures">Фигурки</option>
+          <option value="clothes">Одежда / мелочи</option>
+          <option value="vacation">Отпуск</option>
+          <option value="safety">Подушка</option>
+          <option value="credit">Кредит</option>
+          <option value="other">Другое</option>
+        </select>
+        <input id="allocateAmount" type="number" inputmode="numeric" placeholder="Сумма">
+        <input id="allocateNote" type="text" placeholder="Комментарий">
+        <button class="primary" id="allocateBtn" type="button">Распределить</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>9. Перенос остатка</h2>
+      <div class="grid-3">
+        <input id="carryStart" type="date">
+        <input id="carryAmount" type="number" inputmode="numeric" placeholder="Сумма для переноса">
+        <button class="primary" id="carryBtn" type="button">Перенести в новый период</button>
+      </div>
+      <div class="btn-row-2" style="margin-top:10px">
+        <button class="secondary" id="autoNextBtn" type="button">Создать следующий период</button>
+        <button class="ok" id="closePeriodBtn" type="button">Закрыть период</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="card"><h2>10. Накопления</h2><div class="list" id="savingsStats"></div></div>
+    <div class="card">
+      <h2>11. График накоплений</h2>
+      <div class="chart-wrap"><canvas id="savingsChart" width="900" height="320"></canvas></div>
+      <div class="note" style="margin-top:10px">Синий — отпуск, фиолетовый — подушка, зелёный — всего накоплено.</div>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h2>12. Круговая диаграмма расходов</h2>
+      <div class="chart-wrap"><canvas id="pieChart" width="520" height="320"></canvas></div>
+      <div class="note" id="pieLegend" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h2>13. История операций</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Дата</th><th>Тип</th><th>Категория</th><th>Комментарий</th><th>Сумма</th><th></th></tr>
+          </thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+      <div id="historyEmpty" class="empty" style="display:none">Пока нет операций.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>14. Архив периодов</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Период</th><th>Статус</th><th>Доход</th><th>Потрачено</th><th>Свободно</th><th>Накоплено</th><th></th></tr>
+        </thead>
+        <tbody id="archiveTable"></tbody>
+      </table>
+    </div>
+    <div id="archiveEmpty" class="empty" style="display:none">Архив пуст. Создай первый период.</div>
+  </div>
+
+  <div class="footer">Автосохранение без кнопок — маленькая бытовая роскошь.</div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbzvypLXf6bE3r7NzuhoxRzyozKhmX_FMWfkejhtdjm7xKVQqVKmbaATlR3sYUlXU01R/exec';
+
+const categoryLabels = {
+  food:"Еда", home:"Быт / химия / гигиена", utilities:"Коммуналка", fun:"Развлечения",
+  figures:"Фигурки", clothes:"Одежда / мелочи", vacation:"Отпуск", safety:"Подушка", credit:"Кредит", other:"Другое"
+};
+const typeLabels = { expense:"Трата", income:"Доход", sidejob:"Подработка", system:"Система" };
+const pieColors = {
+  food:"#2f6fed", home:"#8b5cf6", utilities:"#14b8a6", fun:"#f59e0b", figures:"#ef4444",
+  clothes:"#ec4899", vacation:"#10b981", safety:"#6366f1", credit:"#6b7280", other:"#94a3b8"
+};
+const mandatoryCategories = ["utilities","credit"];
+
+const defaultPlan = {
+  incomePeriod: 37500,
+  salary5Amount: 37500,
+  salary20Amount: 37500,
+  budgets: { food:9000, home:1250, utilities:4000, fun:2000, figures:1000, clothes:1500, vacation:1500, safety:1500, credit:8544, other:0 },
+  closed: false
+};
+
+const appState = { version:10, revision:0, periods:{} };
+
+let saveTimer = null;
+let syncInProgress = false;
+let loadedOnce = false;
+
+function setCloudStatus(text, cls=''){
+  const el = document.getElementById('cloudStatus');
+  el.textContent = 'Синхронизация: ' + text;
+  el.className = 'pill ' + cls;
+}
+
+function money(n){ return new Intl.NumberFormat('ru-RU').format(Math.round(n || 0)) + ' ₽'; }
+function formatDate(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function parseDate(str){ return new Date(str + 'T00:00:00'); }
+function todayStr(){ return formatDate(new Date()); }
+function diffDays(fromStr, toStr){
+  const a = parseDate(fromStr).getTime();
+  const b = parseDate(toStr).getTime();
+  return Math.ceil((b - a) / 86400000);
+}
+
+function getSalaryPeriodByDate(dateStr){
+  const d = parseDate(dateStr);
+  const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+  let start, end;
+  if(day >= 5 && day <= 19){
+    start = new Date(y, m, 5);
+    end = new Date(y, m, 19);
+  } else if(day >= 20){
+    start = new Date(y, m, 20);
+    end = new Date(y, m + 1, 4);
+  } else {
+    start = new Date(y, m - 1, 20);
+    end = new Date(y, m, 4);
+  }
+  return { start: formatDate(start), end: formatDate(end) };
+}
+
+function getNextSalaryPeriodStart(startStr){
+  const start = parseDate(startStr);
+  const day = start.getDate();
+  if(day === 5) return formatDate(new Date(start.getFullYear(), start.getMonth(), 20));
+  return formatDate(new Date(start.getFullYear(), start.getMonth() + 1, 5));
+}
+
+function ensurePeriod(key){
+  if(!appState.periods[key]){
+    const p = getSalaryPeriodByDate(key);
+    appState.periods[key] = {
+      start: p.start,
+      end: p.end,
+      plan: JSON.parse(JSON.stringify(defaultPlan)),
+      entries: []
+    };
+  } else {
+    if(typeof appState.periods[key].plan.salary5Amount !== 'number') appState.periods[key].plan.salary5Amount = 37500;
+    if(typeof appState.periods[key].plan.salary20Amount !== 'number') appState.periods[key].plan.salary20Amount = 37500;
+    if(typeof appState.periods[key].plan.closed !== 'boolean') appState.periods[key].plan.closed = false;
+  }
+  return appState.periods[key];
+}
+
+function sortedPeriodKeys(){ return Object.keys(appState.periods).sort((a,b)=>a.localeCompare(b)); }
+function sortedPeriodKeysDesc(){ return Object.keys(appState.periods).sort((a,b)=>b.localeCompare(a)); }
+function formatPeriodLabel(start){ const p = ensurePeriod(start); return `${p.start} → ${p.end}`; }
+
+function buildPeriodSelect(selectedKey){
+  const select = document.getElementById('periodSelect');
+  if(!sortedPeriodKeys().length){
+    const current = getSalaryPeriodByDate(todayStr()).start;
+    ensurePeriod(current);
+  }
+  const keys = sortedPeriodKeysDesc();
+  select.innerHTML = keys.map(key => `<option value="${key}">${formatPeriodLabel(key)}</option>`).join('');
+  select.value = (selectedKey && appState.periods[selectedKey]) ? selectedKey : keys[0];
+}
+function getCurrentPeriodKey(){ return document.getElementById('periodSelect').value; }
+
+function loadPeriodToInputs(key){
+  const p = ensurePeriod(key);
+  document.getElementById('periodStart').value = p.start;
+  document.getElementById('incomePeriod').value = p.plan.incomePeriod || 0;
+  document.getElementById('salary5Amount').value = p.plan.salary5Amount || 0;
+  document.getElementById('salary20Amount').value = p.plan.salary20Amount || 0;
+  document.getElementById('budgetFood').value = p.plan.budgets.food || 0;
+  document.getElementById('budgetHome').value = p.plan.budgets.home || 0;
+  document.getElementById('budgetUtilities').value = p.plan.budgets.utilities || 0;
+  document.getElementById('budgetFun').value = p.plan.budgets.fun || 0;
+  document.getElementById('budgetFigures').value = p.plan.budgets.figures || 0;
+  document.getElementById('budgetClothes').value = p.plan.budgets.clothes || 0;
+  document.getElementById('budgetVacation').value = p.plan.budgets.vacation || 0;
+  document.getElementById('budgetSafety').value = p.plan.budgets.safety || 0;
+  document.getElementById('budgetCredit').value = p.plan.budgets.credit || 0;
+  document.getElementById('entryDate').value = p.start;
+  document.getElementById('carryStart').value = getNextSalaryPeriodStart(p.start);
+}
+
+function dateInRange(dateStr, startStr, endStr){
+  const d = parseDate(dateStr).getTime();
+  return d >= parseDate(startStr).getTime() && d <= parseDate(endStr).getTime();
+}
+function isPeriodClosed(){ return !!ensurePeriod(getCurrentPeriodKey()).plan.closed; }
+
+async function loadFromCloud(){
+  try{
+    setCloudStatus('загрузка...', 'sync-warn');
+    const res = await fetch(`${API_URL}?action=load`);
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'Ошибка загрузки');
+
+    appState.version = data.state.version || 10;
+    appState.revision = data.revision || data.state.revision || 0;
+    appState.periods = data.state.periods || {};
+
+    const selected = sortedPeriodKeysDesc()[0] || getSalaryPeriodByDate(todayStr()).start;
+    ensurePeriod(selected);
+    buildPeriodSelect(selected);
+    loadPeriodToInputs(selected);
+    renderOnly();
+    loadedOnce = true;
+    setCloudStatus(`загружено, rev ${appState.revision}`, 'sync-ok');
+  } catch(e){
+    setCloudStatus('ошибка загрузки', 'sync-bad');
+    alert('Не удалось загрузить данные из Google Sheets');
+  }
+}
+
+async function saveToCloudNow(){
+  if(syncInProgress || !loadedOnce) return;
+  syncInProgress = true;
+  try{
+    setCloudStatus('сохранение...', 'sync-warn');
+    const payload = JSON.parse(JSON.stringify(appState));
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        action:'save',
+        state: payload,
+        baseRevision: appState.revision
+      })
+    });
+
+    const data = await res.json();
+
+    if(data.conflict){
+      setCloudStatus('конфликт данных, перезагружаю...', 'sync-bad');
+      await loadFromCloud();
+      return;
+    }
+
+    if(!data.ok) throw new Error(data.error || 'Ошибка сохранения');
+
+    appState.revision = data.revision || appState.revision + 1;
+    setCloudStatus(`сохранено, rev ${appState.revision}`, 'sync-ok');
+  } catch(e){
+    setCloudStatus('ошибка сохранения', 'sync-bad');
+    console.error(e);
+  } finally {
+    syncInProgress = false;
+  }
+}
+
+function scheduleSave(){
+  renderOnly();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveToCloudNow();
+  }, 700);
+}
+
+function savePlanFromInputs(){
+  const currentKey = getCurrentPeriodKey();
+  const oldPeriod = ensurePeriod(currentKey);
+  const pickedStart = document.getElementById('periodStart').value || oldPeriod.start;
+  const normalizedStart = getSalaryPeriodByDate(pickedStart).start;
+
+  let targetKey = currentKey;
+  if(normalizedStart !== currentKey){
+    appState.periods[normalizedStart] = oldPeriod;
+    delete appState.periods[currentKey];
+    targetKey = normalizedStart;
+  }
+
+  const target = ensurePeriod(targetKey);
+  const normalized = getSalaryPeriodByDate(normalizedStart);
+  target.start = normalized.start;
+  target.end = normalized.end;
+  target.plan = {
+    incomePeriod: Number(document.getElementById('incomePeriod').value) || 0,
+    salary5Amount: Number(document.getElementById('salary5Amount').value) || 0,
+    salary20Amount: Number(document.getElementById('salary20Amount').value) || 0,
+    closed: target.plan.closed || false,
+    budgets: {
+      food:Number(document.getElementById('budgetFood').value)||0,
+      home:Number(document.getElementById('budgetHome').value)||0,
+      utilities:Number(document.getElementById('budgetUtilities').value)||0,
+      fun:Number(document.getElementById('budgetFun').value)||0,
+      figures:Number(document.getElementById('budgetFigures').value)||0,
+      clothes:Number(document.getElementById('budgetClothes').value)||0,
+      vacation:Number(document.getElementById('budgetVacation').value)||0,
+      safety:Number(document.getElementById('budgetSafety').value)||0,
+      credit:Number(document.getElementById('budgetCredit').value)||0,
+      other:0
+    }
+  };
+
+  buildPeriodSelect(targetKey);
+  loadPeriodToInputs(targetKey);
+  scheduleSave();
+}
+
+function createNewPeriod(){
+  const picked = document.getElementById('periodStart').value || todayStr();
+  const start = getSalaryPeriodByDate(picked).start;
+  ensurePeriod(start);
+  buildPeriodSelect(start);
+  loadPeriodToInputs(start);
+  scheduleSave();
+}
+
+function autoCreateNextPeriod(){
+  const key = getCurrentPeriodKey();
+  const next = getNextSalaryPeriodStart(key);
+  ensurePeriod(next);
+  buildPeriodSelect(next);
+  loadPeriodToInputs(next);
+  scheduleSave();
+}
+
+function addEntry(){
+  if(isPeriodClosed()){ alert('Период закрыт. Изменения отключены.'); return; }
+  const key = getCurrentPeriodKey();
+  const p = ensurePeriod(key);
+  const date = document.getElementById('entryDate').value || p.start;
+  const type = document.getElementById('entryType').value;
+  const category = document.getElementById('entryCategory').value;
+  const amount = Number(document.getElementById('entryAmount').value) || 0;
+  const note = document.getElementById('entryNote').value.trim();
+
+  if(amount <= 0) return;
+  if(!dateInRange(date, p.start, p.end)){ alert(`Дата должна быть внутри периода ${p.start} → ${p.end}`); return; }
+
+  p.entries.unshift({
+    id: Math.random().toString(36).slice(2,11),
+    date, type, category, amount,
+    note: note || typeLabels[type]
+  });
+
+  document.getElementById('entryAmount').value = '';
+  document.getElementById('entryNote').value = '';
+  scheduleSave();
+}
+
+function allocateFreeMoney(){
+  if(isPeriodClosed()){ alert('Период закрыт.'); return; }
+  const key = getCurrentPeriodKey();
+  const p = ensurePeriod(key);
+  const category = document.getElementById('allocateCategory').value;
+  const amount = Number(document.getElementById('allocateAmount').value) || 0;
+  const note = document.getElementById('allocateNote').value.trim();
+  if(amount <= 0) return;
+
+  const data = calcPeriod(key);
+  if(amount > data.freeLeft){ alert('Нельзя распределить больше, чем свободный остаток.'); return; }
+
+  p.plan.budgets[category] = (p.plan.budgets[category] || 0) + amount;
+  p.entries.unshift({
+    id: Math.random().toString(36).slice(2,11),
+    date: todayStr(),
+    type: 'system',
+    category,
+    amount,
+    note: note || `Распределение свободного остатка в ${categoryLabels[category]}`
+  });
+
+  loadPeriodToInputs(key);
+  document.getElementById('allocateAmount').value = '';
+  document.getElementById('allocateNote').value = '';
+  scheduleSave();
+}
+
+function carryToNextPeriod(){
+  const currentKey = getCurrentPeriodKey();
+  const currentData = calcPeriod(currentKey);
+  const nextStartRaw = document.getElementById('carryStart').value || getNextSalaryPeriodStart(currentKey);
+  const nextStart = getSalaryPeriodByDate(nextStartRaw).start;
+  const amountRaw = Number(document.getElementById('carryAmount').value);
+  const amount = amountRaw > 0 ? amountRaw : currentData.freeLeft;
+  if(amount <= 0){ alert('Для переноса нужен положительный остаток.'); return; }
+
+  const next = ensurePeriod(nextStart);
+  next.entries.unshift({
+    id: Math.random().toString(36).slice(2,11),
+    date: next.start,
+    type: 'income',
+    category: 'other',
+    amount,
+    note: 'Остаток с прошлой зп'
+  });
+
+  buildPeriodSelect(nextStart);
+  loadPeriodToInputs(nextStart);
+  document.getElementById('carryAmount').value = '';
+  scheduleSave();
+}
+
+function closePeriod(){
+  ensurePeriod(getCurrentPeriodKey()).plan.closed = true;
+  scheduleSave();
+}
+
+function removeEntry(id){
+  if(isPeriodClosed()){ alert('Период закрыт.'); return; }
+  const key = getCurrentPeriodKey();
+  const p = ensurePeriod(key);
+  const entry = p.entries.find(e => e.id === id);
+
+  if(entry && entry.type === 'system'){
+    p.plan.budgets[entry.category] = Math.max((p.plan.budgets[entry.category] || 0) - entry.amount, 0);
+  }
+
+  p.entries = p.entries.filter(e => e.id !== id);
+  scheduleSave();
+}
+
+function clearPeriod(){
+  if(isPeriodClosed()){ alert('Период закрыт.'); return; }
+  ensurePeriod(getCurrentPeriodKey()).entries = [];
+  scheduleSave();
+}
+
+function calcPeriod(key){
+  const p = ensurePeriod(key);
+  const budgets = p.plan.budgets;
+  const catSpent = { food:0, home:0, utilities:0, fun:0, figures:0, clothes:0, vacation:0, safety:0, credit:0, other:0 };
+
+  let incomeBase = p.plan.incomePeriod || 0;
+  let incomeExtra = 0;
+  let sidejobTotal = 0;
+  let sidejobCount = 0;
+  let carryFromPrev = 0;
+  let spentTotal = 0;
+
+  p.entries.forEach(e => {
+    if(e.type === 'income'){
+      incomeExtra += e.amount;
+      if(e.note === 'Остаток с прошлой зп') carryFromPrev += e.amount;
+    } else if(e.type === 'sidejob'){
+      sidejobTotal += e.amount;
+      sidejobCount += 1;
+    } else if(e.type === 'expense'){
+      spentTotal += e.amount;
+      if(catSpent[e.category] === undefined) catSpent.other += e.amount;
+      else catSpent[e.category] += e.amount;
+    }
+  });
+
+  const salarySlot = p.start.endsWith('-05') ? '5' : '20';
+  const salaryExpected = salarySlot === '5' ? (p.plan.salary5Amount || 0) : (p.plan.salary20Amount || 0);
+  const incomeTotal = incomeBase + incomeExtra + sidejobTotal;
+
+  const categoryLefts = {};
+  let reservedLeft = 0;
+  Object.keys(catSpent).forEach(cat => {
+    const budget = budgets[cat] || 0;
+    const spent = catSpent[cat] || 0;
+    const left = budget - spent;
+    categoryLefts[cat] = left;
+    if(left > 0) reservedLeft += left;
+  });
+
+  const factLeft = incomeTotal - spentTotal;
+  const budgetLeftTotal = reservedLeft;
+  const freeLeft = factLeft - reservedLeft;
+  const savedVacation = Math.max((budgets.vacation || 0) - (catSpent.vacation || 0), 0);
+  const savedSafety = Math.max((budgets.safety || 0) - (catSpent.safety || 0), 0);
+  const savedTotal = savedVacation + savedSafety;
+  const mandatoryBudget = mandatoryCategories.reduce((s,cat)=>s+(budgets[cat]||0),0);
+  const mandatorySpent = mandatoryCategories.reduce((s,cat)=>s+(catSpent[cat]||0),0);
+  const mandatoryLeft = mandatoryBudget - mandatorySpent;
+
+  return {
+    period:p, budgets, catSpent, incomeBase, incomeExtra, sidejobTotal, sidejobCount, carryFromPrev,
+    salarySlot, salaryExpected, incomeTotal, spentTotal, factLeft, budgetLeftTotal, freeLeft, categoryLefts,
+    savedVacation, savedSafety, savedTotal, mandatoryBudget, mandatorySpent, mandatoryLeft
+  };
+}
+
+function calcAllSidejobs(){
+  let total = 0, count = 0;
+  Object.values(appState.periods).forEach(period => {
+    period.entries.forEach(e => { if(e.type === 'sidejob'){ total += e.amount; count += 1; } });
+  });
+  return { total, count };
+}
+
+function renderSummary(){
+  const data = calcPeriod(getCurrentPeriodKey());
+  document.getElementById('statIncome').textContent = money(data.incomeTotal);
+  document.getElementById('statSpent').textContent = money(data.spentTotal);
+  document.getElementById('statLeft').textContent = money(data.factLeft);
+  document.getElementById('statBudgetLeft').textContent = money(data.budgetLeftTotal);
+  document.getElementById('statSavedTotal').textContent = money(data.savedTotal);
+
+  const freeEl = document.getElementById('statFreeLeft');
+  freeEl.textContent = money(data.freeLeft);
+  freeEl.className = 'v ' + (data.freeLeft < 0 ? 'bad' : data.freeLeft < 2000 ? 'warn' : 'good');
+
+  const today = todayStr();
+  const days = diffDays(today, data.period.end);
+  document.getElementById('statDaysToSalary').textContent = days < 0 ? 'Период завершён' : `${days + 1} дн.`;
+
+  const status = document.getElementById('periodStatus');
+  const closedText = data.period.plan.closed ? ' Период закрыт.' : '';
+  if(data.freeLeft < 0){
+    status.className = 'pill bad';
+    status.textContent = 'Свободный остаток отрицательный.' + closedText;
+  } else if(data.freeLeft < 2000){
+    status.className = 'pill warn';
+    status.textContent = 'Свободный остаток маленький.' + closedText;
+  } else {
+    status.className = 'pill good';
+    status.textContent = 'Есть свободный остаток.' + closedText;
+  }
+}
+
+function renderIncomeBreakdown(){
+  const data = calcPeriod(getCurrentPeriodKey());
+  const extraWithoutCarry = data.incomeExtra - data.carryFromPrev;
+  document.getElementById('incomeBreakdown').innerHTML = `
+    <div class="line"><span>Период от зарплаты ${data.salarySlot}-го</span><strong>${money(data.salaryExpected)}</strong></div>
+    <div class="line"><span>Доход периода по плану</span><strong class="good">${money(data.incomeBase)}</strong></div>
+    <div class="line"><span>Подработка</span><strong class="good">${money(data.sidejobTotal)}</strong></div>
+    <div class="line"><span>Остаток с прошлой зп</span><strong class="good">${money(data.carryFromPrev)}</strong></div>
+    <div class="line"><span>Прочие доходы</span><strong class="good">${money(extraWithoutCarry)}</strong></div>
+    <div class="line"><span>Доход всего</span><strong class="good">${money(data.incomeTotal)}</strong></div>
+  `;
+}
+
+function renderSidejobStats(){
+  const current = calcPeriod(getCurrentPeriodKey());
+  const all = calcAllSidejobs();
+  document.getElementById('sidejobStats').innerHTML = `
+    <div class="line"><span>Подработка за текущий период</span><strong class="good">${money(current.sidejobTotal)}</strong></div>
+    <div class="line"><span>Записей подработки за период</span><strong>${current.sidejobCount}</strong></div>
+    <div class="line"><span>Подработка по всей базе</span><strong class="good">${money(all.total)}</strong></div>
+    <div class="line"><span>Всего записей подработки</span><strong>${all.count}</strong></div>
+  `;
+}
+
+function renderMandatory(){
+  const data = calcPeriod(getCurrentPeriodKey());
+  document.getElementById('mandatoryStats').innerHTML = `
+    <div class="line"><span>Обязательный бюджет</span><strong>${money(data.mandatoryBudget)}</strong></div>
+    <div class="line"><span>Уже оплачено обязательного</span><strong>${money(data.mandatorySpent)}</strong></div>
+    <div class="line"><span>Осталось по обязательным</span><strong class="${data.mandatoryLeft < 0 ? 'bad' : 'good'}">${money(data.mandatoryLeft)}</strong></div>
+    <div class="line"><span>Коммуналка</span><strong>${money(data.catSpent.utilities || 0)} / ${money(data.budgets.utilities || 0)}</strong></div>
+    <div class="line"><span>Кредит</span><strong>${money(data.catSpent.credit || 0)} / ${money(data.budgets.credit || 0)}</strong></div>
+  `;
+}
+
+function renderCategories(){
+  const data = calcPeriod(getCurrentPeriodKey());
+  const el = document.getElementById('categoryStats');
+  const order = ['food','home','utilities','fun','figures','clothes','vacation','safety','credit','other'];
+
+  el.innerHTML = order.map(cat => {
+    const budget = data.budgets[cat] || 0;
+    const spent = data.catSpent[cat] || 0;
+    const left = data.categoryLefts[cat] || 0;
+    const usedPercent = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
+    let cls = 'good', hint = 'В пределах плана';
+    if(left < 0){ cls = 'bad'; hint = 'Перерасход'; }
+    else if(budget > 0 && left <= budget * 0.2){ cls = 'warn'; hint = 'Почти на лимите'; }
+
+    return `
+      <div class="line" style="display:block">
+        <div style="display:flex;justify-content:space-between;gap:12px">
+          <div><div><strong>${categoryLabels[cat]}</strong></div><div class="note">${hint}</div></div>
+          <div style="text-align:right">
+            <div class="tag">План: ${money(budget)}</div>
+            <div class="tag">Потрачено: ${money(spent)}</div>
+            <div class="tag">Осталось: <span class="${cls}">${money(left)}</span></div>
+          </div>
+        </div>
+        <div class="progress"><span style="width:${usedPercent}%"></span></div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderSavings(){
+  const data = calcPeriod(getCurrentPeriodKey());
+  document.getElementById('savingsStats').innerHTML = `
+    <div class="line"><span>Накоплено на отпуск</span><strong class="good">${money(data.savedVacation)}</strong></div>
+    <div class="line"><span>Накоплено в подушке</span><strong class="good">${money(data.savedSafety)}</strong></div>
+    <div class="line"><span>Всего накоплено</span><strong class="good">${money(data.savedTotal)}</strong></div>
+  `;
+}
+
+function renderSavingsChart(){
+  const canvas = document.getElementById('savingsChart');
+  const ctx = canvas.getContext('2d');
+  const keys = sortedPeriodKeys();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(!keys.length){
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '16px system-ui';
+    ctx.fillText('Нет данных для графика', 20, 40);
+    return;
+  }
+
+  const points = keys.map(key => {
+    const d = calcPeriod(key);
+    return { label: ensurePeriod(key).start.slice(5), vacation: d.savedVacation, safety: d.savedSafety, total: d.savedTotal };
+  });
+
+  const maxValue = Math.max(1, ...points.map(p => Math.max(p.vacation, p.safety, p.total)));
+  const pad = 40, w = canvas.width, h = canvas.height, chartW = w - pad * 2, chartH = h - pad * 2;
+
+  ctx.strokeStyle = '#dbe3ee'; ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){
+    const y = pad + (chartH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w - pad, y); ctx.stroke();
+  }
+
+  ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui';
+  for(let i=0;i<=4;i++){
+    const val = Math.round(maxValue - (maxValue / 4) * i);
+    const y = pad + (chartH / 4) * i;
+    ctx.fillText(String(val), 4, y + 4);
+  }
+
+  function drawLine(values, color){
+    ctx.beginPath();
+    values.forEach((val, i) => {
+      const x = pad + (chartW / Math.max(values.length - 1, 1)) * i;
+      const y = pad + chartH - (val / maxValue) * chartH;
+      if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    values.forEach((val, i) => {
+      const x = pad + (chartW / Math.max(values.length - 1, 1)) * i;
+      const y = pad + chartH - (val / maxValue) * chartH;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+  }
+
+  drawLine(points.map(p => p.vacation), '#2f6fed');
+  drawLine(points.map(p => p.safety), '#8b5cf6');
+  drawLine(points.map(p => p.total), '#157347');
+
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '12px system-ui';
+  points.forEach((p, i) => {
+    const x = pad + (chartW / Math.max(points.length - 1, 1)) * i;
+    ctx.fillText(p.label, x - 14, h - 10);
+  });
+}
+
+function renderPieChart(){
+  const canvas = document.getElementById('pieChart');
+  const ctx = canvas.getContext('2d');
+  const data = calcPeriod(getCurrentPeriodKey());
+  const entries = Object.entries(data.catSpent).filter(([,v]) => v > 0);
+  const legend = document.getElementById('pieLegend');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(!entries.length){
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '16px system-ui';
+    ctx.fillText('Нет расходов для диаграммы', 20, 40);
+    legend.innerHTML = '';
+    return;
+  }
+
+  const total = entries.reduce((s,[,v]) => s + v, 0);
+  let start = -Math.PI / 2;
+  const cx = 170, cy = 160, r = 110;
+
+  entries.forEach(([cat, val]) => {
+    const angle = (val / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + angle);
+    ctx.closePath();
+    ctx.fillStyle = pieColors[cat] || '#94a3b8';
+    ctx.fill();
+    start += angle;
+  });
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 48, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+
+  ctx.fillStyle = '#1f2937';
+  ctx.font = 'bold 14px system-ui';
+  ctx.fillText('Расходы', cx - 28, cy - 4);
+  ctx.font = '12px system-ui';
+  ctx.fillText(money(total), cx - 30, cy + 16);
+
+  legend.innerHTML = entries.map(([cat,val]) => {
+    const percent = Math.round((val / total) * 100);
+    return `<span class="tag" style="background:${pieColors[cat]}22;color:#111">${categoryLabels[cat]} — ${money(val)} (${percent}%)</span>`;
+  }).join(' ');
+}
+
+function renderHistory(){
+  const p = ensurePeriod(getCurrentPeriodKey());
+  const tbody = document.getElementById('historyTable');
+  const empty = document.getElementById('historyEmpty');
+
+  if(!p.entries.length){
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  tbody.innerHTML = p.entries.map(e => `
+    <tr>
+      <td>${e.date}</td>
+      <td>${typeLabels[e.type] || e.type}</td>
+      <td>${categoryLabels[e.category] || e.category}</td>
+      <td>${e.note}</td>
+      <td class="${e.type === 'income' || e.type === 'sidejob' ? 'good' : e.type === 'system' ? 'warn' : ''}">${money(e.amount)}</td>
+      <td><button class="secondary" type="button" onclick="removeEntry('${e.id}')">Удалить</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderArchive(){
+  const keys = sortedPeriodKeysDesc();
+  const tbody = document.getElementById('archiveTable');
+  const empty = document.getElementById('archiveEmpty');
+
+  if(!keys.length){
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  tbody.innerHTML = keys.map(key => {
+    const d = calcPeriod(key);
+    const status = d.period.plan.closed ? '<span class="closed-badge">Закрыт</span>' : '<span class="open-badge">Открыт</span>';
+    return `
+      <tr>
+        <td>${formatPeriodLabel(key)}</td>
+        <td>${status}</td>
+        <td>${money(d.incomeTotal)}</td>
+        <td>${money(d.spentTotal)}</td>
+        <td class="${d.freeLeft < 0 ? 'bad' : 'good'}">${money(d.freeLeft)}</td>
+        <td>${money(d.savedTotal)}</td>
+        <td><button class="secondary" type="button" onclick="openPeriod('${key}')">Открыть</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openPeriod(key){
+  buildPeriodSelect(key);
+  loadPeriodToInputs(key);
+  renderOnly();
+}
+
+function renderOnly(){
+  renderSummary();
+  renderIncomeBreakdown();
+  renderSidejobStats();
+  renderMandatory();
+  renderCategories();
+  renderSavings();
+  renderSavingsChart();
+  renderPieChart();
+  renderHistory();
+  renderArchive();
+}
+
+document.getElementById('savePlanBtn').addEventListener('click', savePlanFromInputs);
+document.getElementById('newPeriodBtn').addEventListener('click', createNewPeriod);
+document.getElementById('autoNextBtn').addEventListener('click', autoCreateNextPeriod);
+document.getElementById('addEntryBtn').addEventListener('click', addEntry);
+document.getElementById('allocateBtn').addEventListener('click', allocateFreeMoney);
+document.getElementById('carryBtn').addEventListener('click', carryToNextPeriod);
+document.getElementById('closePeriodBtn').addEventListener('click', closePeriod);
+document.getElementById('clearPeriodBtn').addEventListener('click', clearPeriod);
+document.getElementById('periodSelect').addEventListener('change', e => {
+  loadPeriodToInputs(e.target.value);
+  renderOnly();
+});
+
+window.removeEntry = removeEntry;
+window.openPeriod = openPeriod;
+
+(async function init(){
+  const initialKey = getSalaryPeriodByDate(todayStr()).start;
+  ensurePeriod(initialKey);
+  buildPeriodSelect(initialKey);
+  loadPeriodToInputs(initialKey);
+  renderOnly();
+  await loadFromCloud();
+})();
+</script>
+</body>
+</html>
